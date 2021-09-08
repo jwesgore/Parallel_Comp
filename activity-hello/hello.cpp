@@ -1,4 +1,6 @@
-int main () {
+#include <stdio.h>
 
-  return 0;
+int main () {
+	printf("ur mom");
+	return 0;
 }
