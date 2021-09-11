@@ -63,7 +63,7 @@ int main (int argc, char* argv[]) {
 
   std::chrono::duration<double> diff = end - start;
 
-  //std::cout << result << std::endl;
+  std::cout << result << std::endl;
   std::cerr << diff.count() << std::endl;
 
   return 0;

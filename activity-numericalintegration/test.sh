@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # does not account for neg numbers
 sci_notation_regex='^[0-9]+([.][0-9]+)?(e[0-9]+|e-[0-9]+)?$'
