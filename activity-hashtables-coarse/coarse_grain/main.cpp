@@ -91,6 +91,8 @@ int main(int argc, char **argv)
   std::vector<std::thread> threads;
   std::mutex mu1;
 
+  auto start =std::chrono::steady_clock::now();
+
   for (auto & filecontent: wordmap) {
     threads.push_back(
       std::thread(f1, std::ref(filecontent), std::ref(mu1), std::ref(dict)));
@@ -99,6 +101,10 @@ int main(int argc, char **argv)
   for (auto & t : threads) {
     t.join();
   }  
+
+  auto stop = std::chrono::steady_clock::now();
+  std::chrono::duration<double> time_elapsed = stop-start;
+  std::cerr << time_elapsed.count()<<"\n";
   
   // Check Hash Table Values 
   /* (you can uncomment, but this must be commented out for tests)
