@@ -78,6 +78,7 @@ int main(int argc, char **argv)
 
   // Populate Hash Table
   for (auto & filecontent: wordmap) {
+    std::cout << "1" << std::endl;
     for (auto & w : filecontent) {
       int count = dict.get(w);
       ++count;
