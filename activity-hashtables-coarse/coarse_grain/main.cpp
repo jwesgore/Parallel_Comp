@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include "Dictionary.cpp"
 #include "MyHashtable.cpp"
@@ -45,7 +47,18 @@ std::vector<std::vector<std::string>> tokenizeLyrics(const std::vector<std::stri
   return ret;
 }
 
-
+void f1 (std::vector<std::string>& filecontent,
+  std::mutex& mu1,
+  Dictionary<std::string, int>& dict) {
+  
+  for (auto & w : filecontent) {
+    mu1.lock();
+    int count = dict.get(w);
+    ++count;
+    dict.set(w, count);
+    mu1.unlock();
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -73,19 +86,20 @@ int main(int argc, char **argv)
   MyHashtable<std::string, int> ht;
   Dictionary<std::string, int>& dict = ht;
 
-
-
   // write code here
 
+  std::vector<std::thread> threads;
+  std::mutex mu1;
 
+  for (auto & filecontent: wordmap) {
+    threads.push_back(
+      std::thread(f1, std::ref(filecontent), std::ref(mu1), std::ref(dict)));
+  }
 
-
-
-
-
-
-
-
+  for (auto & t : threads) {
+    t.join();
+  }  
+  
   // Check Hash Table Values 
   /* (you can uncomment, but this must be commented out for tests)
   for (auto it : dict) {
