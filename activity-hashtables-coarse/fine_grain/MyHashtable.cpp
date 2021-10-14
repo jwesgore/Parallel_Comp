@@ -5,6 +5,7 @@
 #include <functional>
 #include <iostream>
 #include <vector>
+#include <mutex>
 
 template<class K, class V>
 struct Node {
@@ -99,6 +100,39 @@ protected:
   }
 
 public:
+
+  std::mutex mutArr[128];
+
+  /**
+   * Returns the node at key
+   * @param key key of node to get
+   * @return node of type Node at key
+   */
+  // virtual void increment (const K& key) {
+  //   std::size_t index = std::hash<K>{}(key) % this->capacity;
+  //   index = index < 0 ? index + this->capacity : index;
+  //   Node<K,V>* node = this->table[index];
+
+  //   mutArr[index % 128].lock();
+  //   while (node != nullptr) {
+  //   if (node->key == key) {
+	//     node->value = (node->value + 1);
+  //     mutArr[index % 128].unlock();
+	//     return;
+  //   }
+  //   node = node->next;
+
+  //   //if we get here, then the key has not been found
+  //   node = new Node<K,V>(key, 1);
+  //   mutArr[index % 128].unlock();
+  //   node->next = this->table[index];
+  //   this->table[index] = node;
+  //   this->count++;
+  //   if (((double)this->count)/this->capacity > this->loadFactor) {
+  //     this->resize(this->capacity * 2);
+  //   }
+  // }
+
   /**
    * Returns the node at key
    * @param key key of node to get
@@ -127,9 +161,11 @@ public:
     index = index < 0 ? index + this->capacity : index;
     Node<K,V>* node = this->table[index];
     
+    mutArr[index % 128].lock();
     while (node != nullptr) {
       if (node->key == key) {
-	      node->value = value;
+	      node->value = node->value + 1;
+        mutArr[index % 128].unlock();
 	      return;
       }
       node = node->next;
@@ -137,12 +173,14 @@ public:
 
     //if we get here, then the key has not been found
     node = new Node<K,V>(key, value);
+    
     node->next = this->table[index];
     this->table[index] = node;
     this->count++;
     if (((double)this->count)/this->capacity > this->loadFactor) {
       this->resize(this->capacity * 2);
     }
+    mutArr[index % 128].unlock();
   }
 
   /**
