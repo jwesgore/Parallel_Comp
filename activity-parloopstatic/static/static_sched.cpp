@@ -49,9 +49,7 @@ int main (int argc, char* argv[]) {
   // calculate iter/thread
   int iterations = (int) vals[3] / (int) vals[5];
   int overlap = (int) vals[3] % (int) vals[5];
-
-  int start_loop = 0;
-  int end_loop = 0;
+  int point = 0;
 
   // get function
   float (*ptr)(float, int);
@@ -77,9 +75,10 @@ int main (int argc, char* argv[]) {
         
         // split the job evenly
         mu.lock();
-        start_loop = end_loop;
-        end_loop += iterations;
-        overlap > 0 ? (end_loop++, overlap--) : 0;
+        int start_loop = point;
+        point += iterations;
+        overlap > 0 ? (point++, overlap--) : 0;
+        int end_loop = point;
         mu.unlock();
 
         // parfor
