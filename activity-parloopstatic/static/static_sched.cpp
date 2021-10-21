@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <thread>
 #include <mutex>
 #include <vector>
 #include <array>
-
+#include "../sequential/seq_loop.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,32 +18,22 @@ float f2(float x, int intensity);
 float f3(float x, int intensity);
 float f4(float x, int intensity);
 
-void threadFunc(int i, int a, int intensity, float co, float (*ptr)(float, int),std::mutex& mu, float& result){
-  //float temp = (*ptr)(vals[1] + (((float) i + .5) * co), vals[4]) * co;
-  float temp =  (*ptr)(a + ((i + .5) * co), intensity);
-  temp = temp * co;
-  mu.lock();
-  result += temp;
-  mu.unlock();
-}
-
 #ifdef __cplusplus
 }
 #endif
 
-
 int main (int argc, char* argv[]) {
 
   auto start = std::chrono::system_clock::now();
-  std::mutex mu;
-  std::vector<std::thread> threads;
   float result;
+  SeqLoop s1;
 
   if (argc < 7) {
     std::cerr<<"usage: "<<argv[0]<<" <functionid> <a> <b> <n> <intensity> <nbthreads>"<<std::endl;
     return -1;
   }
 
+  // parse input
   std::array<float, 6> vals;
 
   for (int i = 0; i < 6; i++) {
@@ -50,8 +41,9 @@ int main (int argc, char* argv[]) {
   }
 
   float co = (vals[2] - vals[1]) / vals[3];
+  
+  // get function
   float (*ptr)(float, int);
-
   switch ((int) vals[0]) {
     case 1:
       ptr = &f1;
@@ -67,18 +59,11 @@ int main (int argc, char* argv[]) {
       break;
   }
 
-  // loop creating threads
-  for (int i = 0 ; i < vals[3]; i++) {
-    //std::cout << i << std::endl;
-    threads.push_back(
-      std::thread(threadFunc, i, vals[1], vals[4], co, 
-      (*ptr), std::ref(mu), std::ref(result)));
-  }
-  
-  // join threads
-  for (auto & t : threads) {
-    t.join();
-  } 
+  // parloop
+  s1.parfor(0, vals[3], 1, 
+  [&](int i) -> void{
+    result += (*ptr)(vals[1] + ((i + .5) * co), vals[4]) * co;
+    });
 
   // get runtime
   auto end = std::chrono::system_clock::now();
