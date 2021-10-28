@@ -39,65 +39,84 @@ ptr getFunction(int f) {
 
 int main (int argc, char* argv[]) {
 
-  // setup
+  // start timer
   auto start = std::chrono::system_clock::now();
-  std::mutex mu1, mu2;
-  std::vector<std::thread> threads;
-  int count = 0;
-  float result = 0;
 
-  if (argc < 8) {
-    std::cerr<<"usage: "<<argv[0]<<" <functionid> <a> <b> <n> <intensity> <nbthreads> <granularity>"<<std::endl;
+  if (argc < 7) {
+    std::cerr<<"usage: "<<argv[0]<<" <functionid> <a> <b> <n> <intensity> <nbthreads>"<<std::endl;
     return -1;
   }
 
   // parse input
   std::array<float, 7> vals;
-
-  for (int i = 0; i < vals.size(); i++) {
+  std::mutex mu;
+  SeqLoop s1;
+  
+  for (int i = 0; i < 7; i++) {
     vals[i] = atoi(argv[i + 1]);
   }
 
+  double result = 0;
+  
+  int func = vals[0];
+  int a = vals[1];
+  int b = vals[2];
+  int n = vals[3];
+  int intensity = vals[4];
+  int threads = vals[5];
+  int granularity = vals[6];
+
   // calculate coefficient
-  float co = (vals[2] - vals[1]) / vals[3];
+  float co =  (b - a) / float (n);
+  
+  // iterations and threads
+  int iterations = 0;
+  std::vector<std::thread> tls_threads;
 
   // get function
-  float (*ptr)(float, int) = getFunction((int) vals[0]);
+  float (*ptr)(float, int) = getFunction(func);
 
-  // threads
-  for (int i = 0; i < vals[5]; i++) {
-    threads.push_back(
-      std::thread([&](){ 
-        
-        float temp = 0;
-        while (count < vals[3]){
-          
-          // keep count of itteration
-          mu1.lock();
-          int local_count = count;
-          count+= vals[6];
-          mu1.unlock();
+  // parloop
+  s1.parfor<double[100]>(
+    0, threads, 1, 
+    [&](double (&tls)[100]) -> void {
+      
+    },
+    [&](int i, double (&tls)[100]) -> void { 
+      tls_threads.push_back(std::thread(
+        [&, i](){
 
-          // do computation
-          for (int i  = local_count; i < local_count + vals[6] && i < vals[3]; i++){
+          tls[i] = 0;
 
-            temp += (*ptr)(vals[1] + ((i + .5) * co), vals[4]) * co;
-            
+          mu.lock();
+          int iteration = iterations;
+          iterations += granularity;
+          mu.unlock();
+
+          while (iteration < n) {
+
+            for (int j = iteration; j < iteration + granularity; j++) {
+              if (iteration >= n) break;
+              tls[i] += (*ptr)(a + ((j + .5) * co), intensity);
+            }
+
+            mu.lock();
+            iteration = iterations;
+            iterations += granularity;
+            mu.unlock();
           }
+          
         }
-
-        // add results at the end
-        mu2.lock();
-        result += temp;
-        mu2.unlock();
-      })
-    );
-  }
-
-  // join threads
-  for (auto & t : threads){
-    t.join();
-  }
+      ));
+    },
+    [&](double (&tls)[100]) -> void {
+      for (int i = 0; i < threads; i++){
+        tls_threads[i].join();
+        result += tls[i];
+      }
+      result = result * co;
+    }
+  );
 
   // get runtime
   auto end = std::chrono::system_clock::now();
