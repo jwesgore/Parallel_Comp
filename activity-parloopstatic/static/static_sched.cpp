@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include <thread>
-#include <mutex>
 #include <vector>
 #include <array>
 #include "../sequential/seq_loop.hpp"
@@ -22,14 +21,25 @@ float f4(float x, int intensity);
 }
 #endif
 
+// method to parse function 
+typedef float (*ptr) (float,int);
+ptr getFunction(int f) {
+  switch (f) {
+    case 1:
+      return &f1;
+    case 2:
+      return &f2;
+    case 3:
+      return &f3;
+    default:
+      return &f4;
+  }
+}
+
 int main (int argc, char* argv[]) {
 
-  // setup
+  // start timer
   auto start = std::chrono::system_clock::now();
-  float result = 0;
-  std::mutex mu;
-  std::vector<std::thread> threads;
-  SeqLoop s1;
 
   if (argc < 7) {
     std::cerr<<"usage: "<<argv[0]<<" <functionid> <a> <b> <n> <intensity> <nbthreads>"<<std::endl;
@@ -38,69 +48,63 @@ int main (int argc, char* argv[]) {
 
   // parse input
   std::array<float, 6> vals;
-
+  SeqLoop s1;
+  
   for (int i = 0; i < 6; i++) {
     vals[i] = atoi(argv[i + 1]);
   }
 
+  float result = 0;
+  int func = vals[0];
+  int a = vals[1];
+  int b = vals[2];
+  int n = vals[3];
+  int intensity = vals[4];
+  int threads = vals[5];
+
   // calculate coefficient
-  float co = (vals[2] - vals[1]) / vals[3];
+  float co =  (b - a) / float (n);
   
   // calculate iter/thread
-  int iterations = (int) vals[3] / (int) vals[5];
-  int overlap = (int) vals[3] % (int) vals[5];
-  int point = 0;
+  int iterations = n / threads;
+  int overlap = n % threads;
+  int spacing[threads];
+  int temp = 0;
+
+  for (int i = 0; i <= threads; i++) {
+    spacing[i] = temp;
+    temp += iterations;
+    overlap > 0 ? (temp++, overlap--) : 0;
+  }
+
+  std::vector<std::thread> tls_threads;
 
   // get function
-  float (*ptr)(float, int);
-  switch ((int) vals[0]) {
-    case 1:
-      ptr = &f1;
-      break;
-    case 2:
-      ptr = &f2;
-      break;
-    case 3:
-      ptr = &f3;
-      break;
-    case 4:
-      ptr = &f4;
-      break;
-  }
+  float (*ptr)(float, int) = getFunction(func);
 
-  // threads
-  for (int i = 0; i < vals[5]; i++) {
-    threads.push_back(
-      std::thread([&]() {
-        
-        // split the job evenly
-        mu.lock();
-        int start_loop = point;
-        point += iterations;
-        overlap > 0 ? (point++, overlap--) : 0;
-        int end_loop = point;
-        mu.unlock();
-
-        // parfor
-        s1.parfor<float>(
-          start_loop, end_loop, 1, 
-          [&](float& tls) -> void {
-            tls = 0;
-          },
-          [&](int i, float& tls) -> void { 
-            tls += (*ptr)(vals[1] + ((i + .5) * co), vals[4]) * co;
-          },
-          [&](float& tls) -> void {
-            result += tls;
+  // parloop
+  s1.parfor<float[100]>(
+    0, threads, 1, 
+    [&](float (&tls)[100]) -> void {
+      
+    },
+    [&](int i, float (&tls)[100]) -> void { 
+      tls_threads.push_back(std::thread(
+        [&, i](){
+          for (int j = spacing[i]; j < spacing[i + 1]; j++){
+            tls[i] += (*ptr)(a + ((j + .5) * co), intensity);
           }
-        );
-      }));
-  }
-  
-  // join threads
-  for (auto & t : threads){
-    t.join();
-  }
+        }
+      ));
+    },
+    [&](float (&tls)[100]) -> void {
+      for (int i = 0; i < threads; i++){
+        tls_threads[i].join();
+        result += tls[i];
+      }
+      result = result * co;
+    }
+  );
 
   // get runtime
   auto end = std::chrono::system_clock::now();
