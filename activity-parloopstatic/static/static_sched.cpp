@@ -91,6 +91,7 @@ int main (int argc, char* argv[]) {
     [&](int i, float (&tls)[100]) -> void { 
       tls_threads.push_back(std::thread(
         [&, i](){
+          tls[i] = 0;
           for (int j = spacing[i]; j < spacing[i + 1]; j++){
             tls[i] += (*ptr)(a + ((j + .5) * co), intensity);
           }
