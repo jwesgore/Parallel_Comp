@@ -42,8 +42,7 @@ int main (int argc, char* argv[]) {
   //insert LCS code here.
   int result = -1; // length of common subsequence
 
-  const int size = 10000;
-  auto dynamic = new int[size][size];
+  auto 
 
   for (int row = 1; row <= m ; row++) {
     for (int col = 1; col <= n ; col++) {
