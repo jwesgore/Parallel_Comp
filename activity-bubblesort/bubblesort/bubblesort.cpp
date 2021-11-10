@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "omploop.hpp"
 
+#include <chrono>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,8 +19,11 @@ extern "C" {
 }
 #endif
 
-
 int main (int argc, char* argv[]) {
+
+  // start timer
+  auto start = std::chrono::system_clock::now();
+
   if (argc < 3) { std::cerr<<"usage: "<<argv[0]<<" <n> <nbthreads>"<<std::endl;
     return -1;
   }
@@ -30,10 +35,39 @@ int main (int argc, char* argv[]) {
   generateMergeSortData (arr, n);
 
   //insert sorting code here.
+  OmpLoop o1;
 
+  o1.setNbThread(atoi(argv[2]));
 
+  //printArr(std::ref(arr), n);
+
+  for (int i = 0; i < n; i++) {
+
+    int first = i % 2;
+
+    o1.parfor<int>(
+      first, n - 1, 2,
+      [&](int (& tls)){
+        tls = 0;
+      },
+      [&](int i, int (& tls)){
+        if(arr[i] > arr[i + 1])
+          std::swap(arr[i] , arr[i + 1]);
+      },
+      [&](int (& tls)){
+        tls++;
+      }
+    );
+  }
   
+  //printArr(std::ref(arr), n);
+
   checkMergeSortResult (arr, n);
+
+  // get runtime
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> diff = end - start;
+  std::cerr << diff.count() << std::endl;
   
   delete[] arr;
 
