@@ -30,7 +30,7 @@ int main (int argc, char* argv[]) {
   }
 
   int n = atoi(argv[1]);
-
+  int threads = atoi(argv[2]);
   int * arr = new int [n];
   generatePrefixSumData (arr, n);
 
@@ -38,16 +38,19 @@ int main (int argc, char* argv[]) {
 
   //insert prefix sum code here
   OmpLoop o1;
-  o1.setNbThread(atoi(argv[2]));
+  o1.setNbThread(threads);
   o1.parfor<int*>(
-    0,n,1,
+    0,threads,1,
     [&](int* &tls) {
       tls = new int[n];
     },
     [&](int i, int* &tls){
       
-      for (int j = i; j < n; j++){
-        tls[j] += arr[i];
+      int val1 = 0, point = i;
+      while(point < n){
+        val1 += arr[point];
+        for (int i = point; point < i + threads && point < n; point++)
+          tls[point] = val1;
       }
     },
     [&](int* &tls){
