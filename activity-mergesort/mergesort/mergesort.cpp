@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <vector>
+#include <algorithm>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,30 +20,20 @@ extern "C" {
 #endif
 
 void merge(int start, int mid, int end, int arr[]){
-  
-  std::vector<int> left, right;
-  std::cout<< start<< " " << mid << " " << end<< std::endl;
 
-  // fill left and right vectors
-  for (int i = start; i < mid + 1; i++)
-    left.push_back(arr[i]);
-  
-  for (int i = mid; i < end; i++)
-    right.push_back(arr[i+1]);
-  
-  std::cout << "   " << left[0] << " , " << right[0] << std::endl;
+  std::vector<int> temp;
+  int m1 = start, m2 = mid + 1;
 
-  // sort left and right vectors
-  int m1 = 0, m2 = 0, point = start;
-  while (m1 < left.size() && m2 < right.size()) {
-    if (left[m1] < right[m2])
-      arr[point++] = left[m1++];
-    else
-      arr[point++] = right[m2++];
+  while(m1 <= mid && m2 <= end) {
+    if (arr[m1] < arr[m2]) temp.push_back(arr[m1++]);
+    else temp.push_back(arr[m2++]);
   }
 
-  while (m1 < left.size()) arr[point++] = left[m1++];
-  while (m2 < right.size()) arr[point++] = right[m2++];
+  while (m1 <= mid) temp.push_back(arr[m1++]);
+
+  for(int i = start, j = 0; j < temp.size(); i++, j++) {
+    arr[i] = temp[j];
+  }
 }
 
 int main (int argc, char* argv[]) {
@@ -60,59 +51,22 @@ int main (int argc, char* argv[]) {
   int * arr = new int [n];
   generateMergeSortData (arr, n);
 
-  for (int i = 0; i < n; i++)
-    std::cout<< arr[i] << " ";
-  std::cout<<std::endl;
-
   //insert sorting code here.
   OmpLoop o1;
-  int clump = 1;
   o1.setNbThread(atoi(argv[2]));
 
-  while (clump <= n){
-    
-    clump = clump << 1;
-    // std::cout << clump << std::endl;
-
+  for (int batch = 1; batch < n; batch = 2 * batch){
     o1.parfor<int>(
-      0, n-1, clump,
+      0, n, 2 * batch,
       [&](int & tls){},
       [&](int i, int & tls){
-        
-        int end;
-        i + clump >= n ? end = n - 1 : end = i + clump -1;
-        merge(i, (i + end) / 2, end, std::ref(arr));
+        int mid = std::min(i + batch - 1, n - 1);
+        int end = std::min(i + 2 * batch - 1, n - 1);
+        merge(i, mid, end, std::ref(arr));
       },
       [&](int & tls){}
     );
   }
-  
-  if (clump >> 1 != n) {
-    //merge(0, (clump >> 1) + 1, n-1, std::ref(arr));
-  }
-
-  // if (clump >> 1 != n) {
-  //   std::cout << "Clump is: " << clump << std::endl;
-  //   std::cout << "N is: " << n << std::endl;
-
-  //   int temp = 0;
-  //   for (int i = 0; i < n; i++) {
-  //     if (temp <= arr[i])
-  //       temp = arr[i];
-  //     else {
-  //       std::cout << "Split point is: " << i <<std::endl;
-  //       break;
-  //     }
-  //   }
-
-  // }
-
-  
-  //std::vector<int> temp = merge(0, (n-1) / 2 ,n, arr);
-  
-  for (int i = 0; i < n; i++)
-    std::cout<< arr[i] << " ";
-  std::cout<<std::endl;
 
   checkMergeSortResult (arr, n);
 
