@@ -4,20 +4,29 @@
 #include <functional>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 
 
 class SeqLoop {
 
-  int threads;
-
+  int threads, granularity;
+  bool dynamic;
 public:
   SeqLoop()
-    :threads(1)
+    :threads(1), granularity(1), dynamic(false)
   {}
 
   void setNBThread(int i){
     threads = i;
+  }
+
+  void setGranularity(int i) {
+    granularity = i;
+  }
+
+  void setDynamic(bool b) {
+    dynamic = b;
   }
 
   /// @brief execute the function f multiple times with different
@@ -60,25 +69,63 @@ public:
     TLS* tls = new TLS[threads];
     
     std::vector<std::thread> threadpool;
-    std::vector<int> spacing;
-    int gap = (end - beg) / threads;
-
-    for(int i = beg; i < end;) {
-      spacing.push_back(i);
-      i += gap;
-      if ((end - i) % threads != 0) i++;
-    }
-    spacing.push_back(end);
-
+    
+    // before
     for (int i = 0; i < threads;i++) 
-      before(tls[i]); 
+      before(tls[i]);
 
-    for (size_t i = 0; i<threads; i++) {
-      threadpool.push_back(std::thread(
-      [&, i](){
-        for (int j = spacing[i]; j < spacing[i+1]; j++)
-          f(j, tls[i]);
-      }));
+    
+    // dynamic
+    if (dynamic) {
+      
+      int point = beg;
+      std::mutex mu;
+
+      for (size_t i = 0; i<threads; i++) {
+        threadpool.push_back(std::thread(
+        [&, i](){
+
+          mu.lock();
+          int local_point = point;          
+          point += granularity;
+          mu.unlock();
+
+          while (local_point < end) {
+            for (int j = local_point; j < (local_point + granularity) && j < end ;j+=increment)
+              f(j, tls[i]);
+
+            mu.lock();
+            local_point = point;          
+            point += granularity;
+            mu.unlock();
+          }
+
+        }));
+      }
+      
+    } 
+
+    // static
+    else {
+      // determine static spacing
+      std::vector<int> spacing;
+      int gap = (end - beg) / threads;
+
+      for(int i = beg; i < end;) {
+        spacing.push_back(i);
+        i += gap;
+        if ((end - i) % threads != 0) i++;
+      }
+      spacing.push_back(end);
+    
+      // run loop
+      for (size_t i = 0; i<threads; i++) {
+        threadpool.push_back(std::thread(
+        [&, i](){
+          for (int j = spacing[i]; j < spacing[i+1]; j++)
+            f(j, tls[i]);
+        }));
+      }
     }
     
     for (int i = 0; i < threads; i++){

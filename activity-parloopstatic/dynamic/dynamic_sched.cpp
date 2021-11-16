@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <thread>
-#include <mutex>
 #include <vector>
 #include <array>
 #include "../sequential/seq_loop.hpp"
@@ -49,7 +47,6 @@ int main (int argc, char* argv[]) {
 
   // parse input
   std::array<float, 7> vals;
-  std::mutex mu;
   SeqLoop s1;
   
   for (int i = 0; i < 7; i++) {
@@ -66,57 +63,27 @@ int main (int argc, char* argv[]) {
   int threads = vals[5];
   int granularity = vals[6];
 
-  // calculate coefficient
-  float co =  (b - a) / float (n);
-  
-  // iterations and threads
-  int iterations = 0;
-  std::vector<std::thread> tls_threads;
-
-  // get function
-  float (*ptr)(float, int) = getFunction(func);
+  float co =  (b - a) / float (n); // calculate coefficient
+  float (*ptr)(float, int) = getFunction(func); // get function
 
   // parloop
-  s1.parfor<double[100]>(
-    0, threads, 1, 
-    [&](double (&tls)[100]) -> void {
-      
+  s1.setNBThread(threads);
+  s1.setGranularity(granularity);
+  s1.setDynamic(true);
+  s1.parfor<double>(
+    0, n, 1, 
+    [&](double (&tls)) -> void {
+      tls = 0.0;
     },
-    [&](int i, double (&tls)[100]) -> void { 
-      tls_threads.push_back(std::thread(
-        [&, i](){
-
-          tls[i] = 0;
-
-          mu.lock();
-          int iteration = iterations;
-          iterations += granularity;
-          mu.unlock();
-
-          while (iteration < n) {
-
-            for (int j = iteration; j < iteration + granularity; j++) {
-              if (iteration >= n) break;
-              tls[i] += (*ptr)(a + ((j + .5) * co), intensity);
-            }
-
-            mu.lock();
-            iteration = iterations;
-            iterations += granularity;
-            mu.unlock();
-          }
-          
-        }
-      ));
+    [&](int i, double (&tls)) -> void { 
+      tls += (*ptr)(a + ((i + .5) * co), intensity);
     },
-    [&](double (&tls)[100]) -> void {
-      for (int i = 0; i < threads; i++){
-        tls_threads[i].join();
-        result += tls[i];
-      }
-      result = result * co;
+    [&](double (&tls)) -> void {
+      result += tls;
     }
   );
+
+  result = result * co;
 
   // get runtime
   auto end = std::chrono::system_clock::now();
