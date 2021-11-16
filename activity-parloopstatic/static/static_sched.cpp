@@ -54,7 +54,7 @@ int main (int argc, char* argv[]) {
     vals[i] = atoi(argv[i + 1]);
   }
 
-  float result = 0;
+  float result = 0; 
   int func = vals[0];
   int a = vals[1];
   int b = vals[2];
@@ -62,50 +62,25 @@ int main (int argc, char* argv[]) {
   int intensity = vals[4];
   int threads = vals[5];
 
-  // calculate coefficient
-  float co =  (b - a) / float (n);
-  
-  // calculate iter/thread
-  int iterations = n / threads;
-  int overlap = n % threads;
-  int spacing[threads];
-  int temp = 0;
-
-  for (int i = 0; i <= threads; i++) {
-    spacing[i] = temp;
-    temp += iterations;
-    overlap > 0 ? (temp++, overlap--) : 0;
-  }
-
-  std::vector<std::thread> tls_threads;
-
-  // get function
-  float (*ptr)(float, int) = getFunction(func);
+  float (*ptr)(float, int) = getFunction(func); // get function
+  float co =  (b - a) / float (n); // calculate coefficient
 
   // parloop
-  s1.parfor<float[100]>(
-    0, threads, 1, 
-    [&](float (&tls)[100]) -> void {
-      
+  s1.setNBThread(threads);
+  s1.parfor<float>(
+    0, n, 1, 
+    [&](float (&tls)) -> void {
+      tls = 0;
     },
-    [&](int i, float (&tls)[100]) -> void { 
-      tls_threads.push_back(std::thread(
-        [&, i](){
-          tls[i] = 0;
-          for (int j = spacing[i]; j < spacing[i + 1]; j++){
-            tls[i] += (*ptr)(a + ((j + .5) * co), intensity);
-          }
-        }
-      ));
+    [&](int i, float (&tls)) -> void { 
+      tls += (*ptr)(a + ((i + .5) * co), intensity);
     },
-    [&](float (&tls)[100]) -> void {
-      for (int i = 0; i < threads; i++){
-        tls_threads[i].join();
-        result += tls[i];
-      }
-      result = result * co;
+    [&](float (&tls)) -> void {
+      result += tls;
     }
   );
+  
+  result = result * co;
 
   // get runtime
   auto end = std::chrono::system_clock::now();

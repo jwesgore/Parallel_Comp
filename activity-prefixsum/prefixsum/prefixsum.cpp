@@ -49,8 +49,8 @@ int main (int argc, char* argv[]) {
       int val1 = 0, point = i;
       while(point < n){
         val1 += arr[point];
-        for (int i = point; point < i + threads && point < n; point++)
-          tls[point] = val1;
+        for (int i = point; point < i + threads; i++)
+          tls[point] += val1;
       }
     },
     [&](int* &tls){
