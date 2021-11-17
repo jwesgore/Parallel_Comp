@@ -22,6 +22,16 @@ extern "C" {
 }
 #endif
 
+void printlcs_arr(std::vector<std::vector<int>> arr, int n, int m, char* x, char* y){
+  for (int i = 0; i <= n; i++) {
+    for (int j = 0; j <= m; j++) {
+      //std::cout << y[i - 1] << x[j - 1] << " , ";
+      std::cout << arr[i][j] << " , ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 int main (int argc, char* argv[]) {
 
   // start timer
@@ -40,66 +50,57 @@ int main (int argc, char* argv[]) {
   generateLCS(X, m, Y, n);
 
   //insert LCS code here.
-  int result = -1; // length of common subsequence
+  OmpLoop o1, o2;
+  std::vector<std::vector<int>> lcs_arr;
+  for (int i = 0; i <= n; i ++){
+    std::vector<int> vector_row;
+    for(int j = 0; j <= m; j++){
+      vector_row.push_back(0);
+    }
+    lcs_arr.push_back(vector_row);
+  }
 
-  auto 
+  // parfor loop
+  o2.setNbThread(atoi(argv[3]));
+  //std::cout << "         " << X << " , " << Y << std::endl;
+  for(int row_start = 0, col_start = 0; col_start <= m && row_start <= n; col_start++) {
+    int diag = std::min(col_start + 1, n - row_start + 1);
+    //std::cout << diag << std:: endl;
+    //std::cout << row_start << " , " << col_start << std:: endl;
+    //lcs_arr[row_start][col_start] = 1;
+    o2.parfor<int*>(
+      0, diag, 1,
+      [&](int* & tls){
+        tls = new int[diag];
+      },
+      [&](int i, int* & tls){
+        int row_temp = row_start + i;
+        int col_temp = col_start - i;
+        //std::cout << "    " << row_temp << " , " << col_temp << std::endl;
+        if (row_temp == 0 || col_temp == 0) {
+          lcs_arr[row_temp][col_temp] = 0;
+        } else if (X[col_temp-1] == Y[row_temp-1]) {
+          //std::cout << "         " << X[col_temp-1] << " , " << Y[row_temp-1] << std::endl;
+          lcs_arr[row_temp][col_temp] = lcs_arr[row_temp-1][col_temp-1] + 1;
+        } else {
+          //std::cout << "         " << X[col_temp-1] << " , " << Y[row_temp-1] << std::endl;
+          lcs_arr[row_temp][col_temp] = std::max(lcs_arr[row_temp-1][col_temp], lcs_arr[row_temp][col_temp-1]);
+        }
+      },
+      [&](int* & tls){
+        
+      }
+    );
 
-  for (int row = 1; row <= m ; row++) {
-    for (int col = 1; col <= n ; col++) {
-      dynamic[row][col] = -1;
+    if (col_start >= m){
+      col_start = m - 1;
+      row_start++;
     }
   }
 
-  OmpLoop o1;
-  std::condition_variable cv;
-  std::mutex mu1, mu2;
-  
-  // parfor loop
-  o1.setNbThread(atoi(argv[3]));
-  o1.parfor<int>(
-    0, m + n + 1, 1,
-    [&](int & tls){
-      
-    },
-    [&](int i, int & tls){
+  //printlcs_arr(std::ref(lcs_arr), n, m, X, Y);
 
-      // get diag length
-      int diag = 0;
-      int val, row, col;
-      std::unique_lock<std::mutex> lock(mu1);
-
-      if (i < m) {
-        diag = i;
-      } else if (i >= m && i <= n) {
-        diag = m;
-      } else {
-        diag = (m + n) - i;
-      }
-
-      for (int j = 0; j <= diag; j++) {
-        i >= n ? (row = (i - n) + j, col = n - j) : (row = j, col = i - j);
-
-        if (row == 0 || col == 0) continue;
-        X[row - 1] == Y[col - 1] ? val = 1 : val = 0;
-        
-        cv.wait(lock, [&](){
-          return !(dynamic[row-1][col-1] < 0 || dynamic[row][col-1] < 0);
-        });
-
-        val ? val = dynamic[row - 1][col - 1] + 1 :
-          val = std::max(dynamic[row - 1][col], dynamic[row][col - 1]);
-        
-        dynamic[row][col] = val;
-        cv.notify_one();
-      }
-    },
-    [&](int & tls){
-      
-    }
-  );
-
-  result = dynamic[m][n];
-  checkLCS(X, m, Y, n, result);
+  checkLCS(X, m, Y, n, lcs_arr[n][m]);
 
   // get runtime
   auto end = std::chrono::system_clock::now();
