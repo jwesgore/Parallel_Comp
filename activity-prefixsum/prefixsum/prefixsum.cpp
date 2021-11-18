@@ -40,23 +40,24 @@ int main (int argc, char* argv[]) {
   OmpLoop o1;
   o1.setNbThread(threads);
   o1.parfor<int*>(
-    0,threads,1,
-    [&](int* &tls) {
-      tls = new int[n];
+    0,n,1,
+    [&](int * &tls) {
+      tls = new int[n+1];
     },
-    [&](int i, int* &tls){
+    [&](int i, int * &tls){
+     
+      int temp = arr[i];
+      for(int j = i; j < n; j++)
+        tls[j + 1] += temp;
       
-      int val1 = 0, point = i;
-      while(point < n){
-        val1 += arr[point];
-        for (int i = point; point < i + threads; i++)
-          tls[point] += val1;
-      }
     },
     [&](int* &tls){
-      for (int j = 0; j < n; j++) pr[j + 1] += tls[j];
+      for (int i = 0; i<=n; i++)
+        pr[i] += tls[i];
     }
   );
+
+  
 
   
   checkPrefixSumResult(pr, n);
