@@ -34,33 +34,50 @@ int main (int argc, char* argv[]) {
   int * arr = new int [n];
   generatePrefixSumData (arr, n);
 
-  int * pr = new int [n+1];
+  //int * pr = new int [n+1];
+  std::vector<int> pr;
+  std::vector<std::vector<int>> pr_parts(threads);
 
   //insert prefix sum code here
   OmpLoop o1;
   o1.setNbThread(threads);
-  o1.parfor<int*>(
-    0,n,1,
-    [&](int * &tls) {
-      tls = new int[n+1];
+  o1.parfor<std::vector<int>>(
+    0,threads, 1,
+    [&](std::vector<int> &tls) {
+      tls.push_back(0);
     },
-    [&](int i, int * &tls){
-     
-      int temp = arr[i];
-      for(int j = i; j < n; j++)
-        tls[j + 1] += temp;
+    [&](int i, std::vector<int> &tls){
       
+      tls.push_back(i);
+      
+      int start = i * (n / threads);
+      int end = (i + 1) * (n / threads);
+      
+      if (i == threads -1) end = n;
+
+      tls.push_back(arr[start++]);
+      for (int i = start; i < end; i++)
+        tls.push_back(arr[i] + tls.back());
+            
     },
-    [&](int* &tls){
-      for (int i = 0; i<=n; i++)
-        pr[i] += tls[i];
+    [&](std::vector<int> &tls){
+      pr_parts[tls[1]] = tls;
     }
   );
 
-  
+  // combine
+  pr.push_back(0);
+  for(int i = 0; i < threads; i++){
+    //calculate fix
+    int fix = pr.back();
 
-  
-  checkPrefixSumResult(pr, n);
+    // add elements into pr + fix value
+    for (int j = 2; j < pr_parts[i].size(); j++) {
+      pr.push_back(pr_parts[i][j] + fix);
+    }
+  }
+
+  checkPrefixSumResult(pr.data(), n);
 
   // get runtime
   auto end = std::chrono::system_clock::now();
