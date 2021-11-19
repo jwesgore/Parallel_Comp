@@ -46,6 +46,7 @@ int main (int argc, char* argv[]) {
     [&](std::vector<int> &tls) {
     },
     [&](int i, std::vector<int> &tls){
+
       tls.push_back(i);
       
       int start = i * (n / threads);
@@ -59,7 +60,7 @@ int main (int argc, char* argv[]) {
             
     },
     [&](std::vector<int> &tls){
-      pr_parts[tls[1]] = tls;
+      pr_parts[tls.front()] = tls;
     }
   );
 
@@ -67,7 +68,7 @@ int main (int argc, char* argv[]) {
   o1.parfor<int> (
     0, threads, 1,
     [&](int & tls){
-      tls = 2;
+      tls = 1;
     },
     [&](int i, int & tls){
 
