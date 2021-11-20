@@ -74,18 +74,20 @@ int main (int argc, char* argv[]) {
 
   result += rank_val;
 
+  if (rank == 0){
+    result = result * co;
+
+    // get runtime
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = end - start;
+
+    // print results
+    std::cout << result << std::endl;
+    std::cerr << diff.count() << std::endl;
+  }
+
   // MPI end
   MPI_Finalize();
-
-  result = result * co;
-
-  // get runtime
-  auto end = std::chrono::system_clock::now();
-  std::chrono::duration<double> diff = end - start;
-
-  // print results
-  std::cout << result << std::endl;
-  std::cerr << diff.count() << std::endl;
 
   return 0;
 }
