@@ -77,7 +77,7 @@ int main (int argc, char* argv[]) {
   // MPI end
   MPI_Finalize();
 
-  result = result;
+  result = result * co;
 
   // get runtime
   auto end = std::chrono::system_clock::now();
