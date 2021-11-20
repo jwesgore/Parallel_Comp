@@ -72,7 +72,7 @@ int main (int argc, char* argv[]) {
   }
   rank_val *= co;
   std::cout<< rank_val <<std::endl;
-  MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&rank_val, &result, size + 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // get runtime
     auto end = std::chrono::system_clock::now();
