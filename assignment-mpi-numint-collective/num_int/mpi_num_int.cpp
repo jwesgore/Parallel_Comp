@@ -44,14 +44,13 @@ int main (int argc, char* argv[]) {
     return -1;
   }
 
-  int func = atoi(argv[1]);
+  double result = 0; // init result
+  float (*ptr)(float, int) = getFunction(atoi(argv[1])); // get function
+  
   int a = atoi(argv[2]);
   int b = atoi(argv[3]);
   int n = atoi(argv[4]);
   int intensity = atoi(argv[5]);
-
-  double result = 0; // init result
-  float (*ptr)(float, int) = getFunction(func); // get function
   float co =  (b - a) / float (n); // calculate coefficient
 
   // MPI start
@@ -61,33 +60,34 @@ int main (int argc, char* argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  // get separation
   int loop_start = rank * (n / size);
   int loop_end = (rank + 1) * (n / size);
+  if (size - 1 == rank) loop_end = n;
+
   double rank_val = 0;
 
-  if (size - 1== rank) loop_end = n;
-
+  // calculate all values
   for (int i = loop_start; i < loop_end; i++) {
     rank_val += (*ptr)(a + ((i + .5) * co), intensity);
   }
   
   rank_val *= co;
-  double temp = rank_val;
-  //std::cout<< rank << " , " << rank_val <<std::endl;
 
+  // bring all calculations together
   MPI_Reduce(&rank_val, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  //size > 1 ? result += temp : 0;
+
+  // print on rank 0
   if (rank == 0) {
     // get runtime
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
 
     // print results
-    std::cout << result << std::endl;
+    std::cout << (float) result << std::endl;
     std::cerr << diff.count() << std::endl;
   }
 
-  // MPI end
   MPI_Finalize();
 
   return 0;
