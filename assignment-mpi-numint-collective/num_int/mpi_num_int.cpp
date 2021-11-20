@@ -73,7 +73,7 @@ int main (int argc, char* argv[]) {
   
   rank_val *= co;
   double temp = rank_val;
-  std::cout<< rank << " , " << rank_val <<std::endl;
+  //std::cout<< rank << " , " << rank_val <<std::endl;
   MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   result += temp;
   if (rank == 0) {
