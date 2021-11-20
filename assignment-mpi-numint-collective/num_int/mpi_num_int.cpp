@@ -75,7 +75,7 @@ int main (int argc, char* argv[]) {
   double temp = rank_val;
   //std::cout<< rank << " , " << rank_val <<std::endl;
   MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  result += temp;
+  size > 1 ? result += temp : 0;
   if (rank == 0) {
     // get runtime
     auto end = std::chrono::system_clock::now();
