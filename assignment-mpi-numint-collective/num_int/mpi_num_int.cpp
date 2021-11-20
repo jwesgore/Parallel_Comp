@@ -70,18 +70,20 @@ int main (int argc, char* argv[]) {
   for (int i = loop_start; i < loop_end; i++) {
     rank_val += (*ptr)(a + ((i + .5) * co), intensity);
   }
+  double temp = rank_val;
   rank_val *= co;
   std::cout<< rank << " , " << rank_val <<std::endl;
   MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
+  result += temp;
+  if (rank == 0) {
     // get runtime
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
 
     // print results
-    std::cout << rank << " , " <<  result << std::endl;
+    std::cout << result << std::endl;
     std::cerr << diff.count() << std::endl;
-  
+  }
 
   // MPI end
   MPI_Finalize();
