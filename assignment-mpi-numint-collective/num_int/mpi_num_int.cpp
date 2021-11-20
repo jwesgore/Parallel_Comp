@@ -4,8 +4,6 @@
 #include <chrono>
 #include <mpi.h>
 
-#include <vector>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
