@@ -65,7 +65,7 @@ int main (int argc, char* argv[]) {
   int loop_end = (rank + 1) * (n / size);
   float rank_val = 0;
 
-  if (loop_start + 1 == rank) loop_end = n;
+  if (size - 1== rank) loop_end = n;
 
   for (int i = loop_start; i < loop_end; i++) {
     rank_val += (*ptr)(a + ((i + .5) * co), intensity);
