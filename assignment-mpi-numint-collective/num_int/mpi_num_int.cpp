@@ -73,7 +73,7 @@ int main (int argc, char* argv[]) {
 
   MPI_Reduce(&rank_val, &result, size, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-  if (rank == 0){
+  
     result *= co;
 
     // get runtime
@@ -83,7 +83,7 @@ int main (int argc, char* argv[]) {
     // print results
     std::cout << result << std::endl;
     std::cerr << diff.count() << std::endl;
-  }
+  
 
   // MPI end
   MPI_Finalize();
