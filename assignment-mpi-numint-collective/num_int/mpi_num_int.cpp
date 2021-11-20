@@ -72,14 +72,14 @@ int main (int argc, char* argv[]) {
   }
   rank_val *= co;
   std::cout<< rank_val <<std::endl;
-  MPI_Reduce(&rank_val, &result, size + 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // get runtime
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
 
     // print results
-    std::cout << result << std::endl;
+    std::cout << rank << " , " <<  result << std::endl;
     std::cerr << diff.count() << std::endl;
   
 
