@@ -55,7 +55,7 @@ int main (int argc, char* argv[]) {
   float co =  (b - a) / float (n); // calculate coefficient
 
   // MPI start
-  MPI_Init(&argc, &argv);
+  MPI_Init(&argc, &argv, &result);
   int size, rank;
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
