@@ -70,7 +70,7 @@ int main (int argc, char* argv[]) {
   for (int i = loop_start; i < loop_end; i++) {
     rank_val += (*ptr)(a + ((i + .5) * co), intensity);
   }
-
+  std::cout<< rank_val <<std::endl;
   MPI_Reduce(&rank_val, &result, size, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   
