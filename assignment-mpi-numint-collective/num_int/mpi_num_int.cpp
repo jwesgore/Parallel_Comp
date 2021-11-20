@@ -49,7 +49,7 @@ int main (int argc, char* argv[]) {
   int n = atoi(argv[4]);
   int intensity = atoi(argv[5]);
 
-  double result = 0; // init result
+  float result = 0; // init result
   float (*ptr)(float, int) = getFunction(func); // get function
   float co =  (b - a) / float (n); // calculate coefficient
 
