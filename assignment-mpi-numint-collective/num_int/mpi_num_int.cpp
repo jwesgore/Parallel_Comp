@@ -72,7 +72,7 @@ int main (int argc, char* argv[]) {
   }
 
   result += rank_val;
-  std::cout << result << std::endl;
+  std::cout << rank << " , "result << std::endl;
   // if (rank == 0){
   //   result *= co;
 
