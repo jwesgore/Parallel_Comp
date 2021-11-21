@@ -103,8 +103,12 @@ int main (int argc, char*argv[]) {
   MPI_Comm_rank(splitcomm, &rank_split);
 
   // calculate
-  // float* arr_part = new float[part_len];
-  // float* arr_split = new float[part_len];
+  float* arr_part = new float[part_len];
+  float* arr_split = new float[part_len];
+
+  for (int i = 0; i < part_len; i++){
+    arr_part[i] = 1;
+  }
   // float* arr_final = new float[n*n];
   
   // for (int i = 0; i < n / part_len; i++) {
@@ -117,20 +121,23 @@ int main (int argc, char*argv[]) {
   // }
 
   // reduce
-  //MPI_Reduce(&arr_part, &arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
+  MPI_Reduce(&arr_part, &arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
 
   // broadcast
-  // if (rank_split == 0){
-  //   MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
-  //             &y, n, MPI_FLOAT,
-  //             0, MPI_COMM_WORLD);
-  // }
+  if (rank_split == 0){
+    MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
+              &y, n, MPI_FLOAT,
+              0, MPI_COMM_WORLD);
+  }
 
 
 
   // print results
   if (rank_world == 0){
     std::cout << part_len << std::endl;
+    for (int i = 0; i < n; i++)
+      std::cout << y[i] << " ";
+    std::cout << std::endl;
     // for (int it = 0; it<iter; ++it) {
     //   //matmul(A, x, y, n);
     //   {
