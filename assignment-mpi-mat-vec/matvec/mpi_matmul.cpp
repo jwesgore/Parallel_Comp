@@ -109,7 +109,7 @@ int main (int argc, char*argv[]) {
   for (int i = 0; i < part_len; i++){
     arr_part[i] = 1;
   }
-  // float* arr_final = new float[n*n];
+  float* arr_final = new float[n];
   
   // for (int i = 0; i < n / part_len; i++) {
   //   int row = n * (i + (color * n / part_len));
@@ -126,7 +126,7 @@ int main (int argc, char*argv[]) {
   // broadcast
   if (rank_split == 0){
     MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
-              &y, n, MPI_FLOAT,
+              &arr_final, n, MPI_FLOAT,
               0, MPI_COMM_WORLD);
   }
   std::cout << "hi pussy" << std::endl;
@@ -136,7 +136,7 @@ int main (int argc, char*argv[]) {
   if (rank_world == 0){
     std::cout << part_len << std::endl;
     for (int i = 0; i < n; i++)
-      std::cout << y[i] << " ";
+      std::cout << arr_final[i] << " ";
     std::cout << std::endl;
     // for (int it = 0; it<iter; ++it) {
     //   //matmul(A, x, y, n);
