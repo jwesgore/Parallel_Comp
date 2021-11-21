@@ -129,7 +129,7 @@ int main (int argc, char*argv[]) {
               &y, n, MPI_FLOAT,
               0, MPI_COMM_WORLD);
   }
-
+  std::cout << "hi pussy" << std::endl;
 
 
   // print results
