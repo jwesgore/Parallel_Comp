@@ -124,9 +124,9 @@ int main (int argc, char*argv[]) {
   MPI_Reduce(arr_part, arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
   //std::cout << "hi again" << std::endl;
   // broadcast  
-  // MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
-  //           &arr_final, part_len, MPI_FLOAT,
-  //           0, MPI_COMM_WORLD);
+  MPI_Gather(arr_split, part_len, MPI_FLOAT, 
+             arr_final, part_len, MPI_FLOAT,
+             0, MPI_COMM_WORLD);
   
   //std::cout << "hi pussy" << std::endl;
 
