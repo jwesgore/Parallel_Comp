@@ -121,7 +121,7 @@ int main (int argc, char*argv[]) {
   // }
   std::cout << "hi" << std::endl;
   // reduce
-  MPI_Reduce(&arr_part, &arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
+  MPI_Reduce(arr_part, arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
   std::cout << "hi again" << std::endl;
   // broadcast  
   // MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
