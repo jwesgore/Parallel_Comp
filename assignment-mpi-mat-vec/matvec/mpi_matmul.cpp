@@ -135,7 +135,7 @@ int main (int argc, char*argv[]) {
   if (rank_world == 0){
     std::cout << part_len << std::endl;
     for (int i = 0; i < part_len; i++)
-      std::cout << arr_final[i] << " ";
+      std::cout << arr_split[i] << " ";
     std::cout << std::endl;
     // for (int it = 0; it<iter; ++it) {
     //   //matmul(A, x, y, n);
