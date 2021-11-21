@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <chrono>
+#include <vector>
+#include <mpi.h>
 
 float genA (int row, int col) {
   if (row > col)
@@ -50,12 +52,9 @@ int main (int argc, char*argv[]) {
   }
 
   bool check = true;
-  
   long n = atol(argv[1]);
-
   long iter = atol(argv[2]);
   
-
   //initialize data
   float* A = new float[n*n];
 
@@ -85,33 +84,75 @@ int main (int argc, char*argv[]) {
 
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
   
-  for (int it = 0; it<iter; ++it) {
+  // MPI start
+  MPI_Init(&argc, &argv);
+  int size_world, rank_world, size_split, rank_split, part_len;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &size_world);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+
+  part_len = sqrt(size_world);
+
+  // split
+  MPI_Comm splitcomm;
+  int color = rank_world / part_len;
+  int key = rank_world;
+
+  MPI_Comm_split(MPI_COMM_WORLD, color, key, &splitcomm);
+  MPI_Comm_size(splitcomm, &size_split);
+  MPI_Comm_rank(splitcomm, &rank_split);
+
+  // calculate
+  // float* arr_part = new float[part_len];
+  // float* arr_split = new float[part_len];
+  // float* arr_final = new float[n*n];
   
-    matmul(A, x, y, n);
+  // for (int i = 0; i < n / part_len; i++) {
+  //   int row = n * (i + (color * n / part_len));
+  //   float sum = 0;
+  //   for (int j = 0; j < n / part_len; j++){
+  //     sum += A[row + j] * x[j + (rank_split * part_len)];
+  //   }
+  //   arr_part[i] = sum;
+  // }
 
-    {
-      float*t = x;
-      x=y;
-      y=t;
-    }
+  // reduce
+  //MPI_Reduce(&arr_part, &arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
 
-    // std::cout<<"x["<<it+1<<"]: ";
-    // for (long i=0; i<n; ++i)
-    //   std::cout<<x[i]<<" ";
-    // std::cout<<std::endl;
+  // broadcast
+  // if (rank_split == 0){
+  //   MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
+  //             &y, n, MPI_FLOAT,
+  //             0, MPI_COMM_WORLD);
+  // }
 
-    if (check)
-      for (long i = 0; i<n; ++i)
-	checkx (it+1, i, x[i]);
+
+
+  // print results
+  if (rank_world == 0){
+    std::cout << part_len << std::endl;
+    // for (int it = 0; it<iter; ++it) {
+    //   //matmul(A, x, y, n);
+    //   {
+    //     float*t = x;
+    //     x=y;
+    //     y=t;
+    //   }
+
+    //   // std::cout<<"x["<<it+1<<"]: ";
+    //   // for (long i=0; i<n; ++i)
+    //   //   std::cout<<x[i]<<" ";
+    //   // std::cout<<std::endl;
+
+    //   if (check) for (long i = 0; i<n; ++i) checkx (it+1, i, x[i]);
+    // }
+  
+    std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cerr<<elapsed_seconds.count()<<std::endl;
   }
-  
-  std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
-  std::chrono::duration<double> elapsed_seconds = end-start;
-
-  std::cerr<<elapsed_seconds.count()<<std::endl;
-
-  
+  MPI_Finalize();
   
   delete[] A;
   delete[] x;
