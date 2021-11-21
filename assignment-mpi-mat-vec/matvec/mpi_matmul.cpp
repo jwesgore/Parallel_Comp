@@ -119,10 +119,10 @@ int main (int argc, char*argv[]) {
   //   }
   //   arr_part[i] = sum;
   // }
-
+  std::cout << "hi" << std::endl;
   // reduce
   MPI_Reduce(&arr_part, &arr_split, part_len, MPI_FLOAT, MPI_SUM, 0, splitcomm);
-
+  std::cout << "hi again" << std::endl;
   // broadcast
   if (rank_split == 0){
     MPI_Gather(&arr_split, part_len, MPI_FLOAT, 
